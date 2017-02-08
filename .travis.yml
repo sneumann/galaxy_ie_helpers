@@ -1,0 +1,12 @@
+language: python
+python:
+- '2.7'
+
+deploy:
+  provider: pypi
+  user: bgruening
+  password:
+    secure: "TODO"
+  on:
+    distributions: sdist bdist_wheel
+    repo: bgruening/galaxy_ie_helpers
