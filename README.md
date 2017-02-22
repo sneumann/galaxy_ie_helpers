@@ -1,11 +1,8 @@
-Galaxy IE helpers
-=================
+# Galaxy IE helpers [![PyPI](https://img.shields.io/pypi/v/galaxy-ie-helpers.svg?style=flat-square)](https://pypi.python.org/pypi/galaxy-ie-helpers/) [![Travis](https://img.shields.io/travis/bgruening/galaxy_ie_helpers.svg?style=flat-square)](https://travis-ci.org/bgruening/galaxy_ie_helpers)
 
 Script collection used by Galaxy Interactive Environments.
 
-
-Licence (MIT)
-=============
+# Licence (MIT)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
