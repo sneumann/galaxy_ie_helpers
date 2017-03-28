@@ -32,6 +32,7 @@ def _get_ip():
 def _test_url(url, key, history_id, obj=True):
     """Test the functionality of a given galaxy URL, to ensure we can connect
     on that address."""
+    log.debug("TestURL url=%s obj=%s", url, obj)
     try:
         if obj:
             gi = objects.GalaxyInstance(url, key)
@@ -39,8 +40,10 @@ def _test_url(url, key, history_id, obj=True):
         else:
             gi = GalaxyInstance(url=url, key=key)
             gi.histories.get_histories(history_id)
+        log.debug("TestURL url=%s state=success", url)
         return gi
     except Exception:
+        log.debug("TestURL url=%s state=failure", url)
         return None
 
 
@@ -106,6 +109,7 @@ def put(filename, file_type='auto', history_id=None):
     """
     gi = get_galaxy_connection(history_id=history_id)
     history_id = history_id or os.environ['HISTORY_ID']
+    log.debug('Uploading gx=%s history=%s localpath=%s ft=%s', gi, history_id, filename, file_type)
     history = gi.histories.get( history_id )
     history.upload_dataset(filename, file_type=file_type)
 
@@ -120,9 +124,8 @@ def get(dataset_id, history_id=None):
     # The object version of bioblend is to slow in retrieving all datasets from a history
     # fallback to the non-object path
     gi = get_galaxy_connection(history_id=history_id, obj=False)
-
     file_path = '/import/%s' % dataset_id
-
+    log.debug('Downloading gx=%s history=%s dataset=%s', gi, history_id, dataset_id)
     # Cache the file requests. E.g. in the example of someone doing something
     # silly like a get() for a Galaxy file in a for-loop, wouldn't want to
     # re-download every time and add that overhead.
@@ -132,6 +135,8 @@ def get(dataset_id, history_id=None):
         history = hc.show_history(history_id, contents=True)
         datasets = {ds['hid']: ds['id'] for ds in history}
         dc.download_dataset( datasets[dataset_id], file_path=file_path, use_default_filename=False )
+    else:
+        log.debug('Cached, not re-downloading')
 
     return file_path
 
