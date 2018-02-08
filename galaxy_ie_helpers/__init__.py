@@ -141,6 +141,16 @@ def get(datasets_identifiers, identifier_type='hid', history_id=None):
             log.debug('Cached, not re-downloading')
 
     return file_path
+def history_user (history_id=None):
+    """
+       Get all info of user history dataset visible.
+       Return a list of dict of each dataset
+    """ 
+    history_id = history_id or os.environ['HISTORY_ID']
+    gi = get_galaxy_connection(history_id=history_id, obj=False)
+    hc = HistoryClient(gi)
+    history = hc.show_history(history_id, visible=True, contents=True)
+    return history
 
 
 if __name__ == '__main__':
