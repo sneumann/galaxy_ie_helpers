@@ -18,7 +18,7 @@ log = logging.getLogger()
 def _get_ip():
     """Get IP address for the docker host
     """
-    cmd_netstat = ['netstat','-nr']
+    cmd_netstat = ['netstat', '-nr']
     p1 = subprocess.Popen(cmd_netstat, stdout=subprocess.PIPE)
     cmd_grep = ['grep', '^0\.0\.0\.0']
     p2 = subprocess.Popen(cmd_grep, stdin=p1.stdout, stdout=subprocess.PIPE)
@@ -89,7 +89,7 @@ def get_galaxy_connection(history_id=None, obj=True):
         # conf var: galaxy_paster_port
         galaxy_port = os.environ['GALAXY_WEB_PORT']
 
-    built_galaxy_url = 'http://%s:%s/%s' %  (galaxy_ip.strip(), galaxy_port, app_path.strip())
+    built_galaxy_url = 'http://%s:%s/%s' % (galaxy_ip.strip(), galaxy_port, app_path.strip())
     url = built_galaxy_url.rstrip('/')
 
     gi = _test_url(url, key, history_id, obj=obj)
@@ -111,7 +111,7 @@ def put(filenames, file_type='auto', history_id=None):
     history_id = history_id or os.environ['HISTORY_ID']
     for names in filenames:
         log.debug('Uploading gx=%s history=%s localpath=%s ft=%s', gi, history_id, names, file_type)
-        history = gi.histories.get( history_id )
+        history = gi.histories.get(history_id)
         history.upload_dataset(names, file_type=file_type)
 
 
@@ -135,13 +135,13 @@ def get(datasets_args, arg_info, history_id=None):
             hc = HistoryClient(gi)
             dc = DatasetClient(gi)
             history = hc.show_history(history_id, contents=True)
-	    if arg_info == 'int':
-	        dataset_arg = int(dataset_arg)
-	    if isinstance(dataset_arg, int):
+            if arg_info == 'int':
+                dataset_arg = int(dataset_arg)
+            if isinstance(dataset_arg, int):
                 datasets = {ds['hid']: ds['id'] for ds in history}
-	    elif isinstance(dataset_arg, str):
+            elif isinstance(dataset_arg, str):
                 datasets = {ds['name']: ds['id'] for ds in history}
-            dc.download_dataset( datasets[dataset_arg], file_path=file_path, use_default_filename=False )
+            dc.download_dataset(datasets[dataset_arg], file_path=file_path, use_default_filename=False)
         else:
             log.debug('Cached, not re-downloading')
 
@@ -152,11 +152,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Connect to Galaxy through the API')
     parser.add_argument('--action',   help='Action to execute', choices=['get', 'put'])
     parser.add_argument('--history-id', dest="history_id", default=None,
-        help='History ID. The history ID and the dataset ID uniquly identify a dataset. Per default this is set to the current Galaxy history.')
-    parser.add_argument('--argument', nargs='+', help='Files/ID numbers to Upload/Download')
+                        help='History ID. The history ID and the dataset ID uniquly identify a dataset. Per default this is set to the current Galaxy history.')
+    parser.add_argument('--argument', nargs='+', help='Files/ID numbers to Upload/Download.')
     parser.add_argument('-i', '--argument-info', dest="argument_info", choices=['int', 'str'], default='int',
-	help='Type of the argument File/ID Number. Per default, integer ID number')
-    parser.add_argument('-t', '--filetype', help='Galaxy file format. If not specified Galaxy will try to guess the filetype automatically.', default='auto')
+                        help='Type of the argument File/ID Number. Per default, integer ID number.')
+    parser.add_argument('-t', '--filetype', default='auto',
+                        help='Galaxy file format. If not specified Galaxy will try to guess the filetype automatically.')
     args = parser.parse_args()
 
     if args.action == 'get':
