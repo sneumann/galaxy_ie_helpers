@@ -101,31 +101,31 @@ def get_galaxy_connection(history_id=None, obj=True):
 
 def put(filenames, file_type='auto', history_id=None):
     """
-        Given a filename of any file accessible to the docker instance, this
-        function will upload that file to galaxy using the current history.
+        Given filename[s] of any file accessible to the docker instance, this
+        function will upload that file[s] to galaxy using the current history.
         Does not return anything.
     """
     history_id = history_id or os.environ['HISTORY_ID']
     gi = get_galaxy_connection(history_id=history_id)
-    for names in filenames:
-        log.debug('Uploading gx=%s history=%s localpath=%s ft=%s', gi, history_id, names, file_type)
+    for filename in filenames:
+        log.debug('Uploading gx=%s history=%s localpath=%s ft=%s', gi, history_id, filename, file_type)
         history = gi.histories.get(history_id)
-        history.upload_dataset(names, file_type=file_type)
+        history.upload_dataset(filename, file_type=file_type)
 
 
-def get(datasets_args, arg_info='int', history_id=None):
+def get(datasets_identifiers, identifier_type='hid', history_id=None):
     """
         Given the history_id that is displayed to the user, this function will
-        download the file from the history and stores it under /import/
-        Return value is the path to the dataset stored under /import/
+        download the file[s] from the history and stores them under /import/
+        Return value[s] are the path[s] to the dataset[s] stored under /import/
     """
     history_id = history_id or os.environ['HISTORY_ID']
     # The object version of bioblend is to slow in retrieving all datasets from a history
     # fallback to the non-object path
     gi = get_galaxy_connection(history_id=history_id, obj=False)
-    for dataset_arg in datasets_args:
-        file_path = '/import/%s' % dataset_arg
-        log.debug('Downloading gx=%s history=%s dataset=%s', gi, history_id, dataset_arg)
+    for dataset_identifier in datasets_identifiers:
+        file_path = '/import/%s' % dataset_identifier
+        log.debug('Downloading gx=%s history=%s dataset=%s', gi, history_id, dataset_identifier)
         # Cache the file requests. E.g. in the example of someone doing something
         # silly like a get() for a Galaxy file in a for-loop, wouldn't want to
         # re-download every time and add that overhead.
@@ -133,13 +133,10 @@ def get(datasets_args, arg_info='int', history_id=None):
             hc = HistoryClient(gi)
             dc = DatasetClient(gi)
             history = hc.show_history(history_id, contents=True)
-            if arg_info == 'int':
-                dataset_arg = int(dataset_arg)
-            if isinstance(dataset_arg, int):
-                datasets = {ds['hid']: ds['id'] for ds in history}
-            elif isinstance(dataset_arg, str):
-                datasets = {ds['name']: ds['id'] for ds in history}
-            dc.download_dataset(datasets[dataset_arg], file_path=file_path, use_default_filename=False)
+            datasets = {ds[identifier_type]: ds['id'] for ds in history}
+            if identifier_type == 'hid':
+                dataset_identifier = int(dataset_identifier)
+            dc.download_dataset(datasets[dataset_identifier], file_path=file_path, use_default_filename=False)
         else:
             log.debug('Cached, not re-downloading')
 
@@ -152,13 +149,13 @@ if __name__ == '__main__':
     parser.add_argument('--history-id', dest="history_id", default=None,
                         help='History ID. The history ID and the dataset ID uniquly identify a dataset. Per default this is set to the current Galaxy history.')
     parser.add_argument('--argument', nargs='+', help='Files/ID numbers to Upload/Download.')
-    parser.add_argument('-i', '--argument-info', dest="argument_info", choices=['int', 'str'], default='int',
-                        help='Type of the argument File/ID Number. Per default, integer ID number.')
+    parser.add_argument('-i', '--identifier_type', dest="identifier_type", choices=['hid', 'name'], default='hid',
+                        help='Type of the identifiers hid for the dataset id within the history and name for dataset name. Per default, hid.')
     parser.add_argument('-t', '--filetype', default='auto',
                         help='Galaxy file format. If not specified Galaxy will try to guess the filetype automatically.')
     args = parser.parse_args()
 
     if args.action == 'get':
-        get(args.argument, args.argument_info, history_id=args.history_id)
+        get(args.argument, args.identifier_type, history_id=args.history_id)
     elif args.action == 'put':
         put(args.argument, file_type=args.filetype, history_id=args.history_id)
