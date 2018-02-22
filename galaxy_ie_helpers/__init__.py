@@ -50,7 +50,6 @@ def _test_url(url, key, history_id, obj=True):
 def get_galaxy_connection(history_id=None, obj=True):
     """
         Given access to the configuration dict that galaxy passed us, we try and connect to galaxy's API.
-
         First we try connecting to galaxy directly, using an IP address given
         us by docker (since the galaxy host is the default gateway for docker).
         Using additional information collected by galaxy like the port it is
@@ -58,7 +57,6 @@ def get_galaxy_connection(history_id=None, obj=True):
         connection by attempting to get a history listing. This is done to
         avoid any nasty network configuration that a SysAdmin has placed
         between galaxy and us inside docker, like disabling API queries.
-
         If that fails, we failover to using the URL the user is accessing
         through. This will succeed where the previous connection fails under
         the conditions of REMOTE_USER and galaxy running under uWSGI.
@@ -107,15 +105,15 @@ def put(filenames, file_type='auto', history_id=None):
         function will upload that file to galaxy using the current history.
         Does not return anything.
     """
-    gi = get_galaxy_connection(history_id=history_id)
     history_id = history_id or os.environ['HISTORY_ID']
+    gi = get_galaxy_connection(history_id=history_id)
     for names in filenames:
         log.debug('Uploading gx=%s history=%s localpath=%s ft=%s', gi, history_id, names, file_type)
         history = gi.histories.get(history_id)
         history.upload_dataset(names, file_type=file_type)
 
 
-def get(datasets_args, arg_info, history_id=None):
+def get(datasets_args, arg_info='int', history_id=None):
     """
         Given the history_id that is displayed to the user, this function will
         download the file from the history and stores it under /import/
