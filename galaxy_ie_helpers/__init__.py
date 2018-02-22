@@ -141,10 +141,10 @@ def get(datasets_identifiers, identifier_type='hid', history_id=None):
             log.debug('Cached, not re-downloading')
 
     return file_path
-def history_user (history_id=None):
+def get_history_user (history_id=None):
     """
-       Get all info of user history dataset visible.
-       Return a list of dict of each dataset
+       Get all visible dataset infos of user history.
+       Return a list of dict of each dataset.
     """ 
     history_id = history_id or os.environ['HISTORY_ID']
     gi = get_galaxy_connection(history_id=history_id, obj=False)
@@ -155,7 +155,7 @@ def history_user (history_id=None):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Connect to Galaxy through the API')
-    parser.add_argument('--action',   help='Action to execute', choices=['get', 'put'])
+    parser.add_argument('--action',   help='Action to execute', choices=['get', 'put','get_history_user'])
     parser.add_argument('--history-id', dest="history_id", default=None,
                         help='History ID. The history ID and the dataset ID uniquly identify a dataset. Per default this is set to the current Galaxy history.')
     parser.add_argument('--argument', nargs='+', help='Files/ID numbers to Upload/Download.')
@@ -169,3 +169,5 @@ if __name__ == '__main__':
         get(args.argument, args.identifier_type, history_id=args.history_id)
     elif args.action == 'put':
         put(args.argument, file_type=args.filetype, history_id=args.history_id)
+    elif args.action == 'get_history_user':
+        get_history_user()
