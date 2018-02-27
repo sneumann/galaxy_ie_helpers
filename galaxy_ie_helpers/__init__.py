@@ -150,6 +150,10 @@ def get_history_user (history_id=None):
     gi = get_galaxy_connection(history_id=history_id, obj=False)
     hc = HistoryClient(gi)
     history = hc.show_history(history_id, visible=True, contents=True)
+    # I add a None element, to be sure the list has at least 2 elements
+    # It's neccessary, in the case case where the list give to R, it will
+    # be interpreted as a list of list, and not only a list.
+    history.append(None)
     return history
 
 
