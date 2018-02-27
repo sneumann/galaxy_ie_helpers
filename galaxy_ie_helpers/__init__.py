@@ -142,7 +142,7 @@ def get(datasets_identifiers, identifier_type='hid', history_id=None):
 
     return file_path
 
-def get_history_user (history_id=None):
+def get_user_history (history_id=None):
     """
        Get all visible dataset infos of user history.
        Return a list of dict of each dataset.
@@ -176,4 +176,4 @@ if __name__ == '__main__':
     elif args.action == 'put':
         put(args.argument, file_type=args.filetype, history_id=args.history_id)
     elif args.action == 'get_history_user':
-        get_history_user(history_id=args.history_id)
+        get_user_history(history_id=args.history_id)
