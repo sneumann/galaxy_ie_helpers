@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import os
 import galaxy_ie_helpers
 import argparse
 import sys
