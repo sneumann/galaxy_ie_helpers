@@ -9,12 +9,12 @@ if not hasattr(sys, 'argv'):
     sys.argv  = ['']
     
 # To be use with the package "rPython", we need to define a function    
-def history_user(history_id=None):
-    return galaxy_ie_helpers.history_user(history_id)
+def user_history(history_id=None):
+    return galaxy_ie_helpers.get_user_history(history_id)
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Get the History Dataset User.')
     parser.add_argument('--history-id', dest="history_id", default=None,
         help='History ID. The history ID and the dataset ID uniquly identify a dataset. Per default this is set to the current Galaxy history.')
     args = parser.parse_args()
-    history_user( history_id=args.history_id )
+    user_history( history_id=args.history_id )
