@@ -18,7 +18,7 @@ log = logging.getLogger()
 def _get_ip():
     """Get IP address for the docker host
     """
-    cmd_netstat = ['netstat','-nr']
+    cmd_netstat = ['netstat', '-nr']
     p1 = subprocess.Popen(cmd_netstat, stdout=subprocess.PIPE)
     cmd_grep = ['grep', '^0\.0\.0\.0']
     p2 = subprocess.Popen(cmd_grep, stdin=p1.stdout, stdout=subprocess.PIPE)
@@ -50,7 +50,6 @@ def _test_url(url, key, history_id, obj=True):
 def get_galaxy_connection(history_id=None, obj=True):
     """
         Given access to the configuration dict that galaxy passed us, we try and connect to galaxy's API.
-
         First we try connecting to galaxy directly, using an IP address given
         us by docker (since the galaxy host is the default gateway for docker).
         Using additional information collected by galaxy like the port it is
@@ -58,7 +57,6 @@ def get_galaxy_connection(history_id=None, obj=True):
         connection by attempting to get a history listing. This is done to
         avoid any nasty network configuration that a SysAdmin has placed
         between galaxy and us inside docker, like disabling API queries.
-
         If that fails, we failover to using the URL the user is accessing
         through. This will succeed where the previous connection fails under
         the conditions of REMOTE_USER and galaxy running under uWSGI.
@@ -89,7 +87,7 @@ def get_galaxy_connection(history_id=None, obj=True):
         # conf var: galaxy_paster_port
         galaxy_port = os.environ['GALAXY_WEB_PORT']
 
-    built_galaxy_url = 'http://%s:%s/%s' %  (galaxy_ip.strip(), galaxy_port, app_path.strip())
+    built_galaxy_url = 'http://%s:%s/%s' % (galaxy_ip.strip(), galaxy_port, app_path.strip())
     url = built_galaxy_url.rstrip('/')
 
     gi = _test_url(url, key, history_id, obj=obj)
@@ -101,42 +99,46 @@ def get_galaxy_connection(history_id=None, obj=True):
     raise Exception(msg)
 
 
-def put(filename, file_type='auto', history_id=None):
+def put(filenames, file_type='auto', history_id=None):
     """
-        Given a filename of any file accessible to the docker instance, this
-        function will upload that file to galaxy using the current history.
+        Given filename[s] of any file accessible to the docker instance, this
+        function will upload that file[s] to galaxy using the current history.
         Does not return anything.
     """
-    gi = get_galaxy_connection(history_id=history_id)
     history_id = history_id or os.environ['HISTORY_ID']
-    log.debug('Uploading gx=%s history=%s localpath=%s ft=%s', gi, history_id, filename, file_type)
-    history = gi.histories.get( history_id )
-    history.upload_dataset(filename, file_type=file_type)
+    gi = get_galaxy_connection(history_id=history_id)
+    for filename in filenames:
+        log.debug('Uploading gx=%s history=%s localpath=%s ft=%s', gi, history_id, filename, file_type)
+        history = gi.histories.get(history_id)
+        history.upload_dataset(filename, file_type=file_type)
 
 
-def get(dataset_id, history_id=None):
+def get(datasets_identifiers, identifier_type='hid', history_id=None):
     """
         Given the history_id that is displayed to the user, this function will
-        download the file from the history and stores it under /import/
-        Return value is the path to the dataset stored under /import/
+        download the file[s] from the history and stores them under /import/
+        Return value[s] are the path[s] to the dataset[s] stored under /import/
     """
     history_id = history_id or os.environ['HISTORY_ID']
     # The object version of bioblend is to slow in retrieving all datasets from a history
     # fallback to the non-object path
     gi = get_galaxy_connection(history_id=history_id, obj=False)
-    file_path = '/import/%s' % dataset_id
-    log.debug('Downloading gx=%s history=%s dataset=%s', gi, history_id, dataset_id)
-    # Cache the file requests. E.g. in the example of someone doing something
-    # silly like a get() for a Galaxy file in a for-loop, wouldn't want to
-    # re-download every time and add that overhead.
-    if not os.path.exists(file_path):
-        hc = HistoryClient(gi)
-        dc = DatasetClient(gi)
-        history = hc.show_history(history_id, contents=True)
-        datasets = {ds['hid']: ds['id'] for ds in history}
-        dc.download_dataset( datasets[dataset_id], file_path=file_path, use_default_filename=False )
-    else:
-        log.debug('Cached, not re-downloading')
+    for dataset_identifier in datasets_identifiers:
+        file_path = '/import/%s' % dataset_identifier
+        log.debug('Downloading gx=%s history=%s dataset=%s', gi, history_id, dataset_identifier)
+        # Cache the file requests. E.g. in the example of someone doing something
+        # silly like a get() for a Galaxy file in a for-loop, wouldn't want to
+        # re-download every time and add that overhead.
+        if not os.path.exists(file_path):
+            hc = HistoryClient(gi)
+            dc = DatasetClient(gi)
+            history = hc.show_history(history_id, contents=True)
+            datasets = {ds[identifier_type]: ds['id'] for ds in history}
+            if identifier_type == 'hid':
+                dataset_identifier = int(dataset_identifier)
+            dc.download_dataset(datasets[dataset_identifier], file_path=file_path, use_default_filename=False)
+        else:
+            log.debug('Cached, not re-downloading')
 
     return file_path
 
@@ -144,14 +146,16 @@ def get(dataset_id, history_id=None):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Connect to Galaxy through the API')
     parser.add_argument('--action',   help='Action to execute', choices=['get', 'put'])
-    parser.add_argument('--argument', help='File/ID number to Upload/Download, respectively')
     parser.add_argument('--history-id', dest="history_id", default=None,
-        help='History ID. The history ID and the dataset ID uniquly identify a dataset. Per default this is set to the current Galaxy history.')
-    parser.add_argument('-t', '--filetype', help='Galaxy file format. If not specified Galaxy will try to guess the filetype automatically.', default='auto')
+                        help='History ID. The history ID and the dataset ID uniquly identify a dataset. Per default this is set to the current Galaxy history.')
+    parser.add_argument('--argument', nargs='+', help='Files/ID numbers to Upload/Download.')
+    parser.add_argument('-i', '--identifier_type', dest="identifier_type", choices=['hid', 'name'], default='hid',
+                        help='Type of the identifiers hid for the dataset id within the history and name for dataset name. Per default, hid.')
+    parser.add_argument('-t', '--filetype', default='auto',
+                        help='Galaxy file format. If not specified Galaxy will try to guess the filetype automatically.')
     args = parser.parse_args()
 
     if args.action == 'get':
-        # Ensure it's a numerical value
-        get(int(args.argument), history_id=args.history_id)
+        get(args.argument, args.identifier_type, history_id=args.history_id)
     elif args.action == 'put':
         put(args.argument, file_type=args.filetype, history_id=args.history_id)
