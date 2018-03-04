@@ -152,16 +152,12 @@ def get_user_history (history_id=None):
     gi = get_galaxy_connection(history_id=history_id, obj=False)
     hc = HistoryClient(gi)
     history = hc.show_history(history_id, visible=True, contents=True)
-    # I add a None element, to be sure the list has at least 2 elements
-    # It's neccessary, in the case case where the list give to R, it will
-    # be interpreted as a list of list, and not only a list.
-    history.append(None)
     return history
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Connect to Galaxy through the API')
-    parser.add_argument('--action',   help='Action to execute', choices=['get', 'put','get_history_user'])
+    parser.add_argument('--action',   help='Action to execute', choices=['get', 'put','get_user_history'])
     parser.add_argument('--history-id', dest="history_id", default=None,
                         help='History ID. The history ID and the dataset ID uniquly identify a dataset. Per default this is set to the current Galaxy history.')
     parser.add_argument('--argument', nargs='+', help='Files/ID numbers to Upload/Download.')

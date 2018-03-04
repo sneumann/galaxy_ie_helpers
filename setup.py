@@ -11,7 +11,7 @@ setup(
     url = 'https://github.com/bgruening/galaxy_ie_helpers',
     license='LICENSE',
     keywords = ['Galaxy', 'Interactive Environments'],
-    scripts=['bin/get', 'bin/put'],
+    scripts=['bin/get', 'bin/put','bin/get_user_history'],
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
