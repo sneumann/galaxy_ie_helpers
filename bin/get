@@ -9,10 +9,10 @@ if __name__ == '__main__':
                         required = True,
                         nargs='+',
                         help='The dataset ID/name from your Galaxy history.')
-    parser.add_argument('-t', '--argument-type', dest="argument_type", choices=['int', 'str'], default='int',
+    parser.add_argument('-t', '--identifier_type', dest="identifier_type", choices=['hid', 'name'], default='hid',
                         help='Type of the argument File/ID Number. Per default, integer ID number.')
     parser.add_argument('--history-id', dest="history_id", default=None, 
                         help='History ID. The history ID and the dataset ID uniquly identify a dataset. Per default this is set to the current Galaxy history.')
     args = parser.parse_args()
 
-    print( get( args.id, args.argument_type, args.history_id ) )
+    print( get( args.id, args.identifier_type, args.history_id ) )
