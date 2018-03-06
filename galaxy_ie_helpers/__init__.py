@@ -170,5 +170,5 @@ if __name__ == '__main__':
         get(args.argument, args.identifier_type, history_id=args.history_id)
     elif args.action == 'put':
         put(args.argument, file_type=args.filetype, history_id=args.history_id)
-    elif args.action == 'get_history_user':
+    elif args.action == 'get_user_history':
         get_user_history(history_id=args.history_id)
