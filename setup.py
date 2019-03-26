@@ -4,9 +4,9 @@ from setuptools import setup
 setup(
     name = 'galaxy-ie-helpers',
     packages = ['galaxy_ie_helpers'],
-    version = '0.2.2',
+    version = '0.2.3',
     description = "Helper scripts to work with Galaxy's Interactive Environments",
-    author = 'Bjoern A. Gruening, Eric Rasche',
+    author = 'Bjoern A. Gruening; Helena Rasche',
     author_email = 'bjoern.gruening@gmail.com',
     url = 'https://github.com/bgruening/galaxy_ie_helpers',
     license='LICENSE',
