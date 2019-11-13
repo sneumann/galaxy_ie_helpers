@@ -123,6 +123,7 @@ def get(datasets_identifiers, identifier_type='hid', history_id=None):
     # The object version of bioblend is to slow in retrieving all datasets from a history
     # fallback to the non-object path
     gi = get_galaxy_connection(history_id=history_id, obj=False)
+    file_path_all = []
     for dataset_identifier in datasets_identifiers:
         file_path = '/import/%s' % dataset_identifier
         log.debug('Downloading gx=%s history=%s dataset=%s', gi, history_id, dataset_identifier)
@@ -140,13 +141,17 @@ def get(datasets_identifiers, identifier_type='hid', history_id=None):
         else:
             log.debug('Cached, not re-downloading')
 
-    return file_path
+        file_path_all.append(file_path)
+
+    ## First path if only one item given, otherwise all paths.
+    ## Should not break compatibility.
+    return file_path_all[0] if len(file_path_all) == 1 else file_path_all
 
 def get_user_history (history_id=None):
     """
        Get all visible dataset infos of user history.
        Return a list of dict of each dataset.
-    """ 
+    """
     history_id = history_id or os.environ['HISTORY_ID']
     gi = get_galaxy_connection(history_id=history_id, obj=False)
     hc = HistoryClient(gi)
