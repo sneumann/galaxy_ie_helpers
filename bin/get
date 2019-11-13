@@ -10,9 +10,13 @@ if __name__ == '__main__':
                         nargs='+',
                         help='The dataset ID/name from your Galaxy history, or a regex pattern to search all files in the history')
     parser.add_argument('-t', '--identifier_type', dest="identifier_type", choices=['hid', 'name', 'regex'], default='hid',
-                        help='Type of the argument File/ID Number. Per default, integer ID number. If a regex is used as the dataset ID/name, then this should be set to "regex"')
-    parser.add_argument('--history-id', dest="history_id", default=None, 
+                        help='Type of the argument File/ID Number. Per default, integer ID number. If a pattern is specified in -i argument, then this argument should be set to "regex"')
+    parser.add_argument('--history-id', dest="history_id", default=None,
                         help='History ID. The history ID and the dataset ID uniquly identify a dataset. Per default this is set to the current Galaxy history.')
     args = parser.parse_args()
 
-    print( get( args.id, args.identifier_type, args.history_id ) )
+    results = get( args.id, args.identifier_type, args.history_id )
+    if len(results) == 1:
+        print(results)
+    else:
+        print('\n'.join(results))
