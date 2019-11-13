@@ -5,6 +5,7 @@ from bioblend.galaxy.histories import HistoryClient
 from bioblend.galaxy.datasets import DatasetClient
 import subprocess
 import argparse
+import re
 import os
 from string import Template
 import logging
@@ -111,6 +112,41 @@ def put(filenames, file_type='auto', history_id=None):
         log.debug('Uploading gx=%s history=%s localpath=%s ft=%s', gi, history_id, filename, file_type)
         history = gi.histories.get(history_id)
         history.upload_dataset(filename, file_type=file_type)
+
+
+def find_matching_history_ids(list_of_regex_patterns,
+                              identifier_type='hid', history_id=None):
+    """
+       This retrieves a list of matching ids for a list of
+       user-specified regex(es). These can then be fed into
+       the get function to retrieve them.
+
+       Return value[s] are the history ids of the datasets.
+    """
+    # We only deal with arrays, even if only single regex given
+    if type(list_of_regex_patterns) is str:
+        list_of_regex_patterns = [list_of_regex_patterns]
+
+    history_id = history_id or os.environ['HISTORY_ID']
+    gi = get_galaxy_connection(history_id=history_id, obj=False)
+    history_datasets = gi.histories.show_history(history_id=history_id)['state_ids']['ok']
+
+    # Prepare regexes
+    patterns = [re.compile(r, re.IGNORECASE) for r in list_of_regex_patterns]
+
+    matching_ids = []
+    for dataset in history_datasets:
+        fstat = gi.datasets.show_dataset(dataset)
+        fname = fstat["name"]
+        fid = fstat["id"]
+        fhid = fstat["hid"]
+
+        for pat in patterns:
+            if pat.match(fname):
+                log.debug("Matched on history item %s (%s) : '%s' " % (fhid, fid, fname))
+                matching_ids.append(fhid if identifier_type == "hid" else fid)
+
+    return(matching_ids)
 
 
 def get(datasets_identifiers, identifier_type='hid', history_id=None):
