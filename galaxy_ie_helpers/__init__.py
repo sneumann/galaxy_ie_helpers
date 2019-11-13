@@ -5,6 +5,7 @@ from bioblend.galaxy.histories import HistoryClient
 from bioblend.galaxy.datasets import DatasetClient
 import subprocess
 import argparse
+import re
 import os
 from string import Template
 import logging
@@ -113,16 +114,60 @@ def put(filenames, file_type='auto', history_id=None):
         history.upload_dataset(filename, file_type=file_type)
 
 
+def find_matching_history_ids(list_of_regex_patterns,
+                              identifier_type='hid', history_id=None):
+    """
+       This retrieves a list of matching ids for a list of
+       user-specified regex(es). These can then be fed into
+       the get function to retrieve them.
+
+       Return value[s] are the history ids of the datasets.
+    """
+    # We only deal with arrays, even if only single regex given
+    if type(list_of_regex_patterns) is str:
+        list_of_regex_patterns = [list_of_regex_patterns]
+
+    history_id = history_id or os.environ['HISTORY_ID']
+    gi = get_galaxy_connection(history_id=history_id, obj=False)
+    history_datasets = gi.histories.show_history(history_id=history_id)['state_ids']['ok']
+
+    # Prepare regexes
+    patterns = [re.compile(r, re.IGNORECASE) for r in list_of_regex_patterns]
+
+    matching_ids = []
+    for dataset in history_datasets:
+        fstat = gi.datasets.show_dataset(dataset)
+        fname = fstat["name"]
+        fid = fstat["id"]
+        fhid = fstat["hid"]
+
+        for pat in patterns:
+            if pat.match(fname):
+                log.debug("Matched on history item %s (%s) : '%s' " % (fhid, fid, fname))
+                matching_ids.append(fhid if identifier_type == "hid" else fid)
+
+    # unique only
+    return(list(set(matching_ids)))
+
+
 def get(datasets_identifiers, identifier_type='hid', history_id=None):
     """
         Given the history_id that is displayed to the user, this function will
-        download the file[s] from the history and stores them under /import/
+        either search for matching files in the history if the identifier_type
+        is set to 'regex', otherwise it will directly download the file[s] from
+        the history and stores them under /import/.
         Return value[s] are the path[s] to the dataset[s] stored under /import/
     """
     history_id = history_id or os.environ['HISTORY_ID']
     # The object version of bioblend is to slow in retrieving all datasets from a history
     # fallback to the non-object path
     gi = get_galaxy_connection(history_id=history_id, obj=False)
+    file_path_all = []
+
+    if identifier_type == "regex":
+        datasets_identifiers = find_matching_history_ids(datasets_identifiers)
+        identifier_type = "hid"
+
     for dataset_identifier in datasets_identifiers:
         file_path = '/import/%s' % dataset_identifier
         log.debug('Downloading gx=%s history=%s dataset=%s', gi, history_id, dataset_identifier)
@@ -140,13 +185,17 @@ def get(datasets_identifiers, identifier_type='hid', history_id=None):
         else:
             log.debug('Cached, not re-downloading')
 
-    return file_path
+        file_path_all.append(file_path)
+
+    ## First path if only one item given, otherwise all paths.
+    ## Should not break compatibility.
+    return file_path_all[0] if len(file_path_all) == 1 else file_path_all
 
 def get_user_history (history_id=None):
     """
        Get all visible dataset infos of user history.
        Return a list of dict of each dataset.
-    """ 
+    """
     history_id = history_id or os.environ['HISTORY_ID']
     gi = get_galaxy_connection(history_id=history_id, obj=False)
     hc = HistoryClient(gi)
