@@ -146,7 +146,8 @@ def find_matching_history_ids(list_of_regex_patterns,
                 log.debug("Matched on history item %s (%s) : '%s' " % (fhid, fid, fname))
                 matching_ids.append(fhid if identifier_type == "hid" else fid)
 
-    return(matching_ids)
+    # unique only
+    return(list(set(matching_ids)))
 
 
 def get(datasets_identifiers, identifier_type='hid', history_id=None):
