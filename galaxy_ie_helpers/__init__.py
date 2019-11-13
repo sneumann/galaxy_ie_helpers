@@ -153,7 +153,9 @@ def find_matching_history_ids(list_of_regex_patterns,
 def get(datasets_identifiers, identifier_type='hid', history_id=None):
     """
         Given the history_id that is displayed to the user, this function will
-        download the file[s] from the history and stores them under /import/
+        either search for matching files in the history if the identifier_type
+        is set to 'regex', otherwise it will directly download the file[s] from
+        the history and stores them under /import/.
         Return value[s] are the path[s] to the dataset[s] stored under /import/
     """
     history_id = history_id or os.environ['HISTORY_ID']
@@ -161,6 +163,11 @@ def get(datasets_identifiers, identifier_type='hid', history_id=None):
     # fallback to the non-object path
     gi = get_galaxy_connection(history_id=history_id, obj=False)
     file_path_all = []
+
+    if identifier_type == "regex":
+        datasets_identifiers = find_matching_history_ids(datasets_identifiers)
+        identifier_type = "hid"
+
     for dataset_identifier in datasets_identifiers:
         file_path = '/import/%s' % dataset_identifier
         log.debug('Downloading gx=%s history=%s dataset=%s', gi, history_id, dataset_identifier)
