@@ -15,8 +15,9 @@ if __name__ == '__main__':
                         help='History ID. The history ID and the dataset ID uniquly identify a dataset. Per default this is set to the current Galaxy history.')
     args = parser.parse_args()
 
+    # Returns a string, or a list of strings
     results = get( args.id, args.identifier_type, args.history_id )
-    if len(results) == 1:
+    if type(results) is str:
         print(results)
     else:
         print('\n'.join(results))
