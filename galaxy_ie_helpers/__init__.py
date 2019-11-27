@@ -164,12 +164,13 @@ def get(datasets_identifiers, identifier_type='hid', history_id=None):
     gi = get_galaxy_connection(history_id=history_id, obj=False)
     file_path_all = []
 
+    if type(datasets_identifiers) is not list:
+        datasets_identifiers = [datasets_identifiers]
+
     if identifier_type == "regex":
         datasets_identifiers = find_matching_history_ids(datasets_identifiers)
         identifier_type = "hid"
 
-    if type(dataset_identifiers) is not list:
-        dataset_identifiers = [dataset_identifiers]
 
     for dataset_identifier in datasets_identifiers:
         file_path = '/import/%s' % dataset_identifier
