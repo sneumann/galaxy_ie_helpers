@@ -172,9 +172,9 @@ def get(datasets_identifiers, identifier_type='hid', history_id=None):
         identifier_type = "hid"
 
 
-    for dataset_identifier in datasets_identifiers:
-        file_path = '/import/%s' % dataset_identifier
-        log.debug('Downloading gx=%s history=%s dataset=%s', gi, history_id, dataset_identifier)
+    for dataset_id in datasets_identifiers:
+        file_path = '/import/%s' % dataset_id
+        log.debug('Downloading gx=%s history=%s dataset=%s', gi, history_id, dataset_id)
         # Cache the file requests. E.g. in the example of someone doing something
         # silly like a get() for a Galaxy file in a for-loop, wouldn't want to
         # re-download every time and add that overhead.
@@ -184,8 +184,8 @@ def get(datasets_identifiers, identifier_type='hid', history_id=None):
             history = hc.show_history(history_id, contents=True)
             datasets = {ds[identifier_type]: ds['id'] for ds in history}
             if identifier_type == 'hid':
-                dataset_identifier = int(dataset_identifier)
-            dc.download_dataset(datasets[dataset_identifier], file_path=file_path, use_default_filename=False)
+                dataset_id = int(dataset_id)
+            dc.download_dataset(datasets[dataset_id], file_path=file_path, use_default_filename=False)
         else:
             log.debug('Cached, not re-downloading')
 
