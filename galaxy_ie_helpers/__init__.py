@@ -168,6 +168,9 @@ def get(datasets_identifiers, identifier_type='hid', history_id=None):
         datasets_identifiers = find_matching_history_ids(datasets_identifiers)
         identifier_type = "hid"
 
+    if type(dataset_identifiers) is not list:
+        dataset_identifiers = [dataset_identifiers]
+
     for dataset_identifier in datasets_identifiers:
         file_path = '/import/%s' % dataset_identifier
         log.debug('Downloading gx=%s history=%s dataset=%s', gi, history_id, dataset_identifier)
