@@ -106,6 +106,9 @@ def put(filenames, file_type='auto', history_id=None):
         function will upload that file[s] to galaxy using the current history.
         Does not return anything.
     """
+    if type(filenames) is str:
+        filenames = [filenames]
+
     history_id = history_id or os.environ['HISTORY_ID']
     gi = get_galaxy_connection(history_id=history_id)
     for filename in filenames:
