@@ -210,10 +210,9 @@ def get(datasets_identifiers, identifier_type='hid', history_id=None, retrieve_d
         else:
             datatype_multi = dict()
             for i in file_path_all:
-                print(i)
                 dataset_number = int(i.strip().split("/")[-1])
                 datatype_multi[dataset_number] = datatypes_all[0][dataset_number]
-            return file_path_all[0], datatype_multi
+            return file_path_all, datatype_multi
     else:
         return file_path_all[0] if len(file_path_all) == 1 else file_path_all
 
