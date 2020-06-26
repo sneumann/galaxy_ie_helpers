@@ -153,7 +153,7 @@ def find_matching_history_ids(list_of_regex_patterns,
     return(list(set(matching_ids)))
 
 
-def get(datasets_identifiers, identifier_type='hid', history_id=None):
+def get(datasets_identifiers, identifier_type='hid', history_id=None, retrieve_datatype=None):
     """
         Given the history_id that is displayed to the user, this function will
         either search for matching files in the history if the identifier_type
@@ -166,6 +166,7 @@ def get(datasets_identifiers, identifier_type='hid', history_id=None):
     # fallback to the non-object path
     gi = get_galaxy_connection(history_id=history_id, obj=False)
     file_path_all = []
+    datatypes_all = []
 
     if type(datasets_identifiers) is not list:
         datasets_identifiers = [datasets_identifiers]
@@ -186,17 +187,34 @@ def get(datasets_identifiers, identifier_type='hid', history_id=None):
             dc = DatasetClient(gi)
             history = hc.show_history(history_id, contents=True)
             datasets = {ds[identifier_type]: ds['id'] for ds in history}
+            if retrieve_datatype:
+                datatypes_all.append({ds[identifier_type]: ds['extension'] for ds in history})
             if identifier_type == 'hid':
                 dataset_id = int(dataset_id)
             dc.download_dataset(datasets[dataset_id], file_path=file_path, use_default_filename=False)
         else:
+            hc = HistoryClient(gi)
+            dc = DatasetClient(gi)
+            history = hc.show_history(history_id, contents=True)
+            datatypes_all.append({ds[identifier_type]: ds['extension'] for ds in history})
             log.debug('Cached, not re-downloading')
 
         file_path_all.append(file_path)
 
     ## First path if only one item given, otherwise all paths.
     ## Should not break compatibility.
-    return file_path_all[0] if len(file_path_all) == 1 else file_path_all
+    if retrieve_datatype:
+        if len(file_path_all) == 1:
+            dataset_number = int(file_path_all[0].strip().split("/")[-1])
+            return file_path_all, datatypes_all[0][dataset_number]
+        else:
+            datatype_multi = dict()
+            for i in file_path_all:
+                dataset_number = int(i.strip().split("/")[-1])
+                datatype_multi[dataset_number] = datatypes_all[0][dataset_number]
+            return file_path_all, datatype_multi
+    else:
+        return file_path_all[0] if len(file_path_all) == 1 else file_path_all
 
 def get_user_history (history_id=None):
     """
