@@ -40,7 +40,7 @@ def _test_url(url, key, history_id, obj=True):
             gi.histories.get(history_id)
         else:
             gi = GalaxyInstance(url=url, key=key)
-            gi.histories.get_histories(history_id)
+            gi.histories.show_history(history_id)
         log.debug("TestURL url=%s state=success", url)
         return gi
     except Exception:
