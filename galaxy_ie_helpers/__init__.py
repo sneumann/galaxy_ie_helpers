@@ -3,15 +3,18 @@ from bioblend.galaxy import objects
 from bioblend.galaxy import GalaxyInstance
 from bioblend.galaxy.histories import HistoryClient
 from bioblend.galaxy.datasets import DatasetClient
+from bioblend.galaxy.dataset_collections import DatasetCollectionClient
 import subprocess
 import argparse
 import re
 import os
+import zipfile
 from string import Template
 import logging
-DEBUG = os.environ.get('DEBUG', "False").lower() == 'true'
-if DEBUG:
+if os.environ.get('DEBUG', "False").lower() == 'true':
     logging.basicConfig(level=logging.DEBUG)
+if os.environ.get('INFO', "False").lower() == 'true':
+    logging.basicConfig(level=logging.INFO)
 logging.getLogger("bioblend").setLevel(logging.CRITICAL)
 log = logging.getLogger()
 
@@ -112,7 +115,7 @@ def put(filenames, file_type='auto', history_id=None):
     history_id = history_id or os.environ['HISTORY_ID']
     gi = get_galaxy_connection(history_id=history_id)
     for filename in filenames:
-        log.debug('Uploading gx=%s history=%s localpath=%s ft=%s', gi, history_id, filename, file_type)
+        log.info('Uploading gx=%s history=%s localpath=%s ft=%s', gi, history_id, filename, file_type)
         history = gi.histories.get(history_id)
         history.upload_dataset(filename, file_type=file_type)
 
@@ -175,31 +178,50 @@ def get(datasets_identifiers, identifier_type='hid', history_id=None, retrieve_d
         datasets_identifiers = find_matching_history_ids(datasets_identifiers)
         identifier_type = "hid"
 
+    hc = HistoryClient(gi)
+    dc = DatasetClient(gi)
+    dcc = DatasetCollectionClient(gi)
 
     for dataset_id in datasets_identifiers:
         file_path = '/import/%s' % dataset_id
-        log.debug('Downloading gx=%s history=%s dataset=%s', gi, history_id, dataset_id)
+        log.info('Downloading gx=%s history=%s dataset=%s', gi, history_id, dataset_id)
         # Cache the file requests. E.g. in the example of someone doing something
         # silly like a get() for a Galaxy file in a for-loop, wouldn't want to
         # re-download every time and add that overhead.
         if not os.path.exists(file_path):
-            hc = HistoryClient(gi)
-            dc = DatasetClient(gi)
             history = hc.show_history(history_id, contents=True)
-            datasets = {ds[identifier_type]: ds['id'] for ds in history}
+            datasets = {ds[identifier_type]: {'id': ds['id'], 'type': ds['history_content_type']} for ds in history}
             if retrieve_datatype:
                 datatypes_all.append({ds[identifier_type]: ds['extension'] for ds in history})
             if identifier_type == 'hid':
                 dataset_id = int(dataset_id)
-            dc.download_dataset(datasets[dataset_id], file_path=file_path, use_default_filename=False)
+
+            if datasets[dataset_id]['type'] == 'dataset':
+                dc.download_dataset(datasets[dataset_id]['id'], file_path=file_path, use_default_filename=False)
+                file_path_all.append(file_path)
+            else:
+                log.info('Downloading collection gx=%s history=%s dataset=%s', gi, history_id, dataset_id)
+                dcc.download_dataset_collection(datasets[dataset_id]['id'], file_path=file_path + '.zip')
+                os.makedirs(file_path, exist_ok=True)
+                with zipfile.ZipFile(file_path + '.zip', 'r') as zip_ref:
+                    zip_ref.extractall(path=file_path)
+                    file_path_all.extend([os.path.join(file_path, x) for x in zip_ref.namelist()])
         else:
             hc = HistoryClient(gi)
             dc = DatasetClient(gi)
             history = hc.show_history(history_id, contents=True)
             datatypes_all.append({ds[identifier_type]: ds['extension'] for ds in history})
-            log.debug('Cached, not re-downloading')
+            log.info('Cached, not re-downloading')
+            if datasets[dataset_id]['type'] == 'dataset':
+                file_path_all.append(file_path)
+            else:
+                # Walk instead of glob because glob will find folders.
+                # Here we filter on things that are files, not directories.
+                files = [[os.path.join(r, f1) for f1 in f] for (r, d, f) in os.walk(file_path) if len(f) > 0]
+                # Flatten
+                files = [item for sublist in files for item in sublist]
+                file_path_all.extend(files)
 
-        file_path_all.append(file_path)
 
     ## First path if only one item given, otherwise all paths.
     ## Should not break compatibility.
