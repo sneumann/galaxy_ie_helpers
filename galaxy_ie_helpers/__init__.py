@@ -28,7 +28,7 @@ def _get_ip():
     p2 = subprocess.Popen(cmd_grep, stdin=p1.stdout, stdout=subprocess.PIPE)
     cmd_awk = ['awk', '{ print $2 }']
     p3 = subprocess.Popen(cmd_awk, stdin=p2.stdout, stdout=subprocess.PIPE)
-    galaxy_ip = p3.stdout.read()
+    galaxy_ip = p3.stdout.read().decode().strip()
     log.debug('Host IP determined to be %s', galaxy_ip)
     return galaxy_ip
 
